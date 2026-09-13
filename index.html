@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Almoxarifado</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* TELA DE LOGIN */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #2c3e50;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-card h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .login-card .form-group {
+            margin-bottom: 15px;
+        }
+
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+            transition: 0.2s;
+        }
+
+        .login-card button:hover {
+            background-color: #2980b9;
+        }
+
+        /* TELA PRINCIPAL DO APP */
+        #app-screen {
+            display: none; /* Oculto até o login */
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-logout {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-logout:hover {
+            background-color: #c0392b;
+        }
+
+        /* Abas de Navegação */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Formulários */
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #fafafa;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        input, select, button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        button.btn-submit {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            align-self: flex-end;
+            padding: 10px;
+            transition: 0.2s;
+        }
+
+        button.btn-submit:hover {
+            background-color: #219150;
+        }
+
+        /* Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .badge-pendente { background-color: #ffeaa7; color: #d63031; }
+        .badge-devolvido { background-color: #55efc4; color: #00b894; }
+
+        .btn-action {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .btn-return { background-color: #e67e22; color: white; }
+        .btn-delete { background-color: #e74c3c; color: white; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. TELA DE LOGIN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>Acesso ao Almoxarifado</h2>
+            <form id="form-login" onsubmit="realizarLogin(event)" style="display: block; background: none; border: none; padding: 0;">
+                <div class="form-group">
+                    <label for="login-email">E-mail corporativo:</label>
+                    <input type="email" id="login-email" placeholder="seu.email@empresa.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-senha">Senha:</label>
+                    <input type="password" id="login-senha" placeholder="Digite sua senha" required>
+                </div>
+                <button type="submit">Entrar no Sistema</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. TELA PRINCIPAL DO APLICATIVO -->
+    <div id="app-screen">
+        <div class="container">
+            <header>
+                <div>
+                    <h1>Gestão de Almoxarifado</h1>
+                    <span>Sistema de Controle Interno</span>
+                </div>
+                <div class="user-info">
+                    <span>Usuário: <strong id="user-display"></strong></span>
+                    <button class="btn-logout" onclick="realizarLogout()">Sair</button>
+                </div>
+            </header>
+
+            <!-- Navegação por Abas -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('emprestimos', event)">Empréstimos</button>
+                <button class="tab-btn" onclick="switchTab('itens', event)">Itens / Ferramentas</button>
+                <button class="tab-btn" onclick="switchTab('funcionarios', event)">Funcionários</button>
+            </div>
+
+            <!-- ABA 1: EMPRÉSTIMOS -->
+            <div id="emprestimos" class="tab-content active">
+                <h2>Registrar Novo Empréstimo</h2>
+                <form id="form-emprestimo">
+                    <div class="form-group">
+                        <label>Funcionário:</label>
+                        <select id="emp-funcionario" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Item / Ferramenta:</label>
+                        <select id="emp-item" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade:</label>
+                        <input type="number" id="emp-qtd" min="1" value="1" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Realizar Empréstimo</button>
+                </form>
+
+                <h2>Histórico de Empréstimos</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Funcionário</th>
+                            <th>Item</th>
+                            <th>Qtd</th>
+                            <th>Registrado Por</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-emprestimos"></tbody>
+                </table>
+            </div>
+
+            <!-- ABA 2: ITENS E FERRAMENTAS -->
+            <div id="itens" class="tab-content">
+                <h2>Cadastrar Item ou Ferramenta</h2>
+                <form id="form-item">
+                    <div class="form-group">
+                        <label>Nome do Item/Ferramenta:</label>
+                        <input type="text" id="item-nome" placeholder="Ex: Furadeira, Martelo, Luva" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria:</label>
+                        <input type="text" id="item-categoria" placeholder="Ex: Elétrica, EPI, Manual" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade em Estoque:</label>
+                        <input type="number" id="item-qtd" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Cadastrar Item</button>
+                </form>
+
+                <h2>Estoque Atual</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Em Estoque</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-itens"></tbody>
+                </table>
+            </div>
+
+            <!-- ABA 3: FUNCIONÁRIOS -->
+            <div id="funcionarios" class="tab-content">
+                <h2>Cadastrar Funcionário</h2>
+                <form id="form-funcionario">
+                    <div class="form-group">
+                        <label>Nome Completo:</label>
+                        <input type="text" id="func-nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cargo / Setor:</label>
+                        <input type="text" id="func-cargo" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Cadastrar Funcionário</button>
+                </form>
+
+                <h2>Funcionários Cadastrados</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Cargo/Setor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-funcionarios"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- BANCO DE DADOS LOCAL (LocalStorage) ---
+        let db = {
+            itens: JSON.parse(localStorage.getItem('almox_itens')) || [],
+            funcionarios: JSON.parse(localStorage.getItem('almox_funcionarios')) || [],
+            emprestimos: JSON.parse(localStorage.getItem('almox_emprestimos')) || []
+        };
+
+        let usuarioLogado = localStorage.getItem('almox_usuario_logado') || null;
+
+        function saveData() {
+            localStorage.setItem('almox_itens', JSON.stringify(db.itens));
+            localStorage.setItem('almox_funcionarios', JSON.stringify(db.funcionarios));
+            localStorage.setItem('almox_emprestimos', JSON.stringify(db.emprestimos));
+            render();
+        }
+
+        // --- AUTENTICAÇÃO E LOGIN ---
+        function verificarSessao() {
+            if (usuarioLogado) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'block';
+                document.getElementById('user-display').innerText = usuarioLogado;
+                render();
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
+            }
+        }
+
+        function realizarLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+
+            if (email) {
+                usuarioLogado = email;
+                localStorage.setItem('almox_usuario_logado', email);
+                document.getElementById('form-login').reset();
+                verificarSessao();
+            }
+        }
+
+        function realizarLogout() {
+            localStorage.removeItem('almox_usuario_logado');
+            usuarioLogado = null;
+            verificarSessao();
+        }
+
+        // --- NAVEGAÇÃO ENTRE ABAS ---
+        function switchTab(tabId, event) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- CADASTRAR FUNCIONÁRIO ---
+        document.getElementById('form-funcionario').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('func-nome').value;
+            const cargo = document.getElementById('func-cargo').value;
+
+            db.funcionarios.push({
+                id: Date.now(),
+                nome,
+                cargo
+            });
+
+            saveData();
+            e.target.reset();
+        });
+
+        // --- CADASTRAR ITEM ---
+        document.getElementById('form-item').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('item-nome').value;
+            const categoria = document.getElementById('item-categoria').value;
+            const quantidade = parseInt(document.getElementById('item-qtd').value);
+
+            db.itens.push({
+                id: Date.now(),
+                nome,
+                categoria,
+                quantidade
+            });
+
+            saveData();
+            e.target.reset();
+        });
+
+        // --- CADASTRAR EMPRÉSTIMO ---
+        document.getElementById('form-emprestimo').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const funcId = parseInt(document.getElementById('emp-funcionario').value);
+            const itemId = parseInt(document.getElementById('emp-item').value);
+            const quantidade = parseInt(document.getElementById('emp-qtd').value);
+
+            const item = db.itens.find(i => i.id === itemId);
+
+            if (!item || item.quantidade < quantidade) {
+                alert('Quantidade indisponível em estoque!');
+                return;
+            }
+
+            // Subtrai do estoque
+            item.quantidade -= quantidade;
+
+            // Registra o empréstimo incluindo quem foi o operador responsável
+            db.emprestimos.push({
+                id: Date.now(),
+                funcId,
+                itemId,
+                quantidade,
+                operador: usuarioLogado,
+                data: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                status: 'Pendente'
+            });
+
+            saveData();
+            e.target.reset();
+        });
+
+        // --- DEVOLVER ITEM ---
+        function devolverItem(emprestimoId) {
+            const emp = db.emprestimos.find(e => e.id === emprestimoId);
+            if (!emp || emp.status === 'Devolvido') return;
+
+            const item = db.itens.find(i => i.id === emp.itemId);
+            if (item) {
+                item.quantidade += emp.quantidade; // Devolve ao estoque
+            }
+
+            emp.status = 'Devolvido';
+            saveData();
+        }
+
+        // --- EXCLUIR REGISTROS ---
+        function deletar(tipo, id) {
+            if (confirm('Tem certeza que deseja excluir?')) {
+                db[tipo] = db[tipo].filter(item => item.id !== id);
+                saveData();
+            }
+        }
+
+        // --- RENDERIZAR INTERFACE ---
+        function render() {
+            // Renderizar Lista de Funcionários
+            const listaFunc = document.getElementById('lista-funcionarios');
+            const selectFunc = document.getElementById('emp-funcionario');
+            listaFunc.innerHTML = '';
+            selectFunc.innerHTML = '<option value="">Selecione...</option>';
+
+            db.funcionarios.forEach(f => {
+                listaFunc.innerHTML += `
+                    <tr>
+                        <td>#${f.id.toString().slice(-4)}</td>
+                        <td>${f.nome}</td>
+                        <td>${f.cargo}</td>
+                        <td><button class="btn-action btn-delete" onclick="deletar('funcionarios', ${f.id})">Excluir</button></td>
+                    </tr>
+                `;
+                selectFunc.innerHTML += `<option value="${f.id}">${f.nome} (${f.cargo})</option>`;
+            });
+
+            // Renderizar Lista de Itens
+            const listaItens = document.getElementById('lista-itens');
+            const selectItem = document.getElementById('emp-item');
+            listaItens.innerHTML = '';
+            selectItem.innerHTML = '<option value="">Selecione...</option>';
+
+            db.itens.forEach(i => {
+                listaItens.innerHTML += `
+                    <tr>
+                        <td>#${i.id.toString().slice(-4)}</td>
+                        <td>${i.nome}</td>
+                        <td>${i.categoria}</td>
+                        <td><strong>${i.quantidade}</strong></td>
+                        <td><button class="btn-action btn-delete" onclick="deletar('itens', ${i.id})">Excluir</button></td>
+                    </tr>
+                `;
+                if(i.quantidade > 0) {
+                    selectItem.innerHTML += `<option value="${i.id}">${i.nome} (Em estoque: ${i.quantidade})</option>`;
+                }
+            });
+
+            // Renderizar Empréstimos
+            const listaEmp = document.getElementById('lista-emprestimos');
+            listaEmp.innerHTML = '';
+
+            db.emprestimos.forEach(e => {
+                const func = db.funcionarios.find(f => f.id === e.funcId);
+                const item = db.itens.find(i => i.id === e.itemId);
+
+                const funcNome = func ? func.nome : 'Funcionário Removido';
+                const itemNome = item ? item.nome : 'Item Removido';
+                const isPendente = e.status === 'Pendente';
+
+                listaEmp.innerHTML += `
+                    <tr>
+                        <td>${e.data}</td>
+                        <td>${funcNome}</td>
+                        <td>${itemNome}</td>
+                        <td>${e.quantidade}</td>
+                        <td><small>${e.operador || 'N/A'}</small></td>
+                        <td><span class="badge ${isPendente ? 'badge-pendente' : 'badge-devolvido'}">${e.status}</span></td>
+                        <td>
+                            ${isPendente ? `<button class="btn-action btn-return" onclick="devolverItem(${e.id})">Devolver</button>` : ''}
+                            <button class="btn-action btn-delete" onclick="deletar('emprestimos', ${e.id})">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Inicializar a checagem de sessão ao carregar a página
+        verificarSessao();
+    </script>
+</body>
+</html>
